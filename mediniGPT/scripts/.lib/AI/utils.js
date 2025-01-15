@@ -1,5 +1,6 @@
-load("../helper.js");
-load("./config.js");
+// load("../helper.js");
+// load("./configs.js");
+
 
 var utils = {
     getEnvVar: function (var_name){
@@ -7,10 +8,10 @@ var utils = {
     },
     
     getGPTanswer: function (promptJsonObj){
-        var outJsonStr = performCommand(["curl", "-X", "POST", this._getEnvVar("GPT_endpoint"), 
+        var outJsonStr = performCommand(["curl", "-X", "POST", this.getSecret().endpoint, 
                                                  "-H", "Content-Type: application/json", 
-                                                 "-H", "api-key:"+ this._getEnvVar("GPT_API"), 
-                                                 "-d", this._json2str(promptJsonObj)]);
+                                                 "-H", "api-key:"+ this.getSecret().apiKey, 
+                                                 "-d", this.json2str(promptJsonObj)]);
         return outJsonStr;
     },
     
@@ -26,19 +27,47 @@ var utils = {
         var timestamp = Date.now();
         var date      = new Date(timestamp);
         return date.toJSON(); //E.g. 2025-01-14T06:15:43.626Z
+    },
+    getSecret: function(){
+		var apiKey, endpoint;
+        if (configs.apiAccessMethod == 'c'){
+            apiKey   = configs.apiKey;
+            endpoint = configs.endpoint;
+        }
+        if (configs.apiAccessMethod == 'e'){
+            apiKey   = this.getEnvVar(configs.apiKey);
+            endpoint = this.getEnvVar(configs.endpoint);
+        }
+        return {apiKey: apiKey, endpoint: endpoint};
+    },
+	
+	handleNonASCII: function(){ //TODO
+		return '';
+	},
+    gptJsonGenerator: function(samplePrompt, seq, content, sampleGptJson){
+        var newPrompt = samplePrompt;
+        newPrompt[seq]["content"] = content;
+        
+        var newGptJson = sampleGptJson;
+        newGptJson["messages"] = newPrompt;
+        
+        return newGptJson;
     }
 
 };
 
-function gptClass(inJsonObj){
+function GptConversation(inJsonObj){
+　　　　if (!inJsonObj) {
+        throw "Wrong arguments of GptConversation";
+    }
+    
     this.inJsonObj      = inJsonObj;
     this.createdDate    = utils.getCurrentTime();
     this.outJsonStr     = utils.getGPTanswer(inJsonObj);
-    this.outJsonObj     = JSON.parse(this.outJsonStr);
     this.content        = utils.prettifyGPTanswer(this.outJsonStr);
     
     this.getContent     = function(){return this.content;};
     this.getCreatedDate = function(){return this.createdDate;};
     this.getInJsonObj   = function(){return this.inJsonObj;};
-    this.getOutJsonObj  = function(){return this.outJsonObj;};
+    this.getOutJsonObj  = function(){return JSON.parse(this.outJsonStr);};
 }
