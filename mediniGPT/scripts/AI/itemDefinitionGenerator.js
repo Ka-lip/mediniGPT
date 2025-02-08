@@ -9,8 +9,6 @@ var reader = {
     getDesc: function(obj){return obj.description;} 
 };
 
-var ai = {};
-
 var writer = {
     decideWriteMode: function(){
         var mode = prompt('Type "a" for append mode, or "r" for replace mode.','a');
