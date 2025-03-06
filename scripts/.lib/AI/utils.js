@@ -4,7 +4,7 @@
 
 var utils = {
     getEnvVar: function (var_name){
-        return performCommand(["cmd", "/C", "echo", "%" + var_name + "%"]).join("\n");
+        return java.lang.System.getenv(var_name);
     },
     
     getGPTanswer: function (promptJsonObj){
@@ -57,7 +57,7 @@ var utils = {
 };
 
 function GptConversation(inJsonObj){
-　　　　if (!inJsonObj) {
+    if (!inJsonObj) {
         throw "Wrong arguments of GptConversation";
     }
     
