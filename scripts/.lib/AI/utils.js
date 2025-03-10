@@ -45,14 +45,21 @@ var utils = {
 		return '';
 	},
     gptJsonGenerator: function(samplePrompt, seq, content, sampleGptJson){
-        var newPrompt = samplePrompt;
-        newPrompt[seq]["content"] = content;
+        var gptPrompt = samplePrompt;
+        gptPrompt[seq]["content"] = content;
         
-        var newGptJson = sampleGptJson;
-        newGptJson["messages"] = newPrompt;
+        var gptJson = sampleGptJson;
+        gptJson["messages"] = gptPrompt;
         
-        return newGptJson;
-    }
+        return gptJson;
+    },
+
+	text2json: function (text){
+		var t = text.replace(/```json/g, '');
+		t = t.replace(/```/g, '');
+		j = JSON.parse(t);
+		return j;
+	}
 
 };
 
@@ -66,7 +73,12 @@ function GptConversation(inJsonObj){
     this.outJsonStr     = utils.getGPTanswer(inJsonObj);
     this.content        = utils.prettifyGPTanswer(this.outJsonStr);
     
-    this.getContent     = function(){return this.content;};
+    this.getContent     = function(dataType){
+		if (dataType == undefined || dataType == 'text'){return this.content;}
+		if (dataType == 'json'){
+			return this.content;
+		}
+	};
     this.getCreatedDate = function(){return this.createdDate;};
     this.getInJsonObj   = function(){return this.inJsonObj;};
     this.getOutJsonObj  = function(){return JSON.parse(this.outJsonStr);};
