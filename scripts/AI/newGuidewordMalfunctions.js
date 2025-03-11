@@ -1,24 +1,23 @@
-//$EXPERIMENTAL$
+//$EXPERIMENTAL$ $ENHANCED_JAVA_ACCESS$
 load("../.lib/AI/utils.js");
 load("../.lib/helper.js");
 load("../.lib/AI/configs.js");
 load("../.lib/ui.js");
 load("../.lib/factory.js");
 
-var j = '```json\n{\n  \"NOT\": {\n    \"name\": \"No Stop\",\n    \"description\": \"The car fails to stop when the brake is engaged, leading to uncontrolled motion.\"\n  },\n  \"MORE\": {\n    \"name\": \"Excessive Delay\",\n    \"description\": \"The car takes longer than expected to come to a complete stop, potentially increasing the stopping distance.\"\n  },\n  \"LESS\": {\n    \"name\": \"Insufficient Brake Force\",\n    \"description\": \"The braking system applies less force than required, resulting in an inadequate stopping response.\"\n  },\n  \"AS WELL AS\": {\n    \"name\": \"Simultaneous Malfunction\",\n    \"description\": \"The car stops but experiences simultaneous issues with the steering or other auxiliary systems, affecting overall control.\"\n  },\n  \"PART OF\": {\n    \"name\": \"\",\n    \"description\": \"\"\n  },\n  \"REVERSE\": {\n    \"name\": \"Unexpected Acceleration\",\n    \"description\": \"In situations where a stop is initiated, the car experiences unintended acceleration instead, leading to dangerous situations.\"\n  },\n  \"OTHER THAN\": {\n    \"name\": \"\",\n    \"description\": \"\"\n  },\n  \"EARLY\": {\n    \"name\": \"Premature Stop\",\n    \"description\": \"The car stops unexpectedly before reaching the intended stopping point, which may endanger any passengers or other vehicles.\"\n  },\n  \"LATE\": {\n    \"name\": \"Delayed Stop\",\n    \"description\": \"The car stops later than intended, potentially causing a collision with obstacles ahead.\"\n  },\n  \"BEFORE\": {\n    \"name\": \"\",\n    \"description\": \"\"\n  },\n  \"AFTER\": {\n    \"name\": \"\",\n    \"description\": \"\"\n  },\n  \"PERIODIC\": {\n    \"name\": \"\",\n    \"description\": \"\"\n  }\n}\n```';
 var reader = {
-	getGuidewords: function(guidewordObj){
-		if (guidewordObj == undefined){var guidewordObj = selection[0];}
-		var guidewordObjArr = guidewordObj.guidewords.toArray();
-		var guidewordArr = Array(guidewordObjArr.length);
-		for (var i = 0; i < guidewordObjArr.length; i++){
-			guidewordArr[i] = guidewordObjArr[i].name;
+	getGuidewords: function(hazopTable){
+		if (hazopTable == undefined){var hazopTable = selection[0];}
+		var hazopTableArr = hazopTable.guidewords.toArray();
+		var guidewordArr = Array(hazopTableArr.length);
+		for (var i = 0; i < hazopTableArr.length; i++){
+			guidewordArr[i] = hazopTableArr[i].name;
 		}
 		return guidewordArr;
 	},
-	getSubjects: function(guidewordObj){
-		if (guidewordObj == undefined){var guidewordObj = selection[0];}
-		var subjectEntries = guidewordObj.entries.toArray();
+	getSubjects: function(hazopTable){
+		if (hazopTable == undefined){var hazopTable = selection[0];}
+		var subjectEntries = hazopTable.entries.toArray();
 		var subjectArr = Array(subjectEntries.length);
 		for (var i = 0; i < subjectEntries.length; i++){
 			subjectArr[i] = subjectEntries[i].element;
@@ -34,46 +33,58 @@ var writer = {
 			var malfunction = Factory.createElement(scope, Metamodel.safetyModel.Malfunction);
 			malfunction.name = json.name;
 			malfunction.description = json.description;
+
 			return malfunction;
 		}
 	},
-	updateGuidewordTable: function(malfunction, guideword){
+	updateGuidewordTable: function(malfunction, guideword, hazopTable){
+		if (hazopTable == undefined){ var hazopTable = selection[0]; }
+		var tableEntries = hazopTable.entries.toArray();
+		var tableGuidewords = hazopTable.guidewords.toArray();
+		if (malfunction == undefined || guideword == undefined){ return 1; }
+		var entry = tableEntries.filter(function(e){return e.element == malfunction.mediniGetContainer();})[0];
+		var gw = tableGuidewords.filter(function(g){return g.name == guideword;})[0];
+		Factory.createMapEntry(entry.guidewordToFailures, gw, malfunction);
+
 		return 0;
 	},
 	newMalfunctions: function(json, scope){
 		if (scope == undefined){ var scope = selection[0]; }
 		var guidewords = Object.keys(json);
+		var malfunctions = Array(guidewords.length);
 		var k, v;
 		for (var i = 0; i < guidewords.length; i++){
 			k = guidewords[i];
 			v = json[k];
-			this.newMalfunction(v, scope);
+			malfunctions[i] = this.newMalfunction(v, scope);
 		}
-		return 0; //TODO need to integrate with guideword table
+		return [guidewords, malfunctions];
 	}
 };
 
 function main(){
     var guidewords = reader.getGuidewords();
 	var subjects = reader.getSubjects();
-	var promptContent = "Use guideword analysis approach to derive the malfunctions of the function 'car stops'. Your return shall be a JSON string for guidewords, NOT, MORE, LESS, AS WELL AS, PART OF, REVERSE, OTHER THAN, EARLY, LATE, BEFORE, AFTER, PEROIDIC. If there is no reasonable malfunction for a specific guideword, just keep the value empty. For each guideword, the values include the name of the malfunction, which shall be shorter, and the description of the malfunction, which should explain the malfunction in detail. Your return shall only have the JSON string without anything else.";
+	// TODO: replace the guidewords in promptContentTemplate automatically
+	// TODO: allow multiple malfunctions for a single guideword
+	var promptContentTemplate = "Use guideword analysis approach to derive the malfunctions of the function 'FUNC_PLACEHOLDER'. Your return shall be a JSON string for guidewords, `NO OR NOT`, `MORE`, `LESS`, `AS WELL AS`, `PART OF`, `REVERSE`, `OTHER THAN`, `EARLY`, `LATE`, `BEFORE`, `AFTER`, `PEROIDIC`. If there is no reasonable malfunction for a specific guideword, just keep the value empty. For each guideword, the values include the name of the malfunction, which shall be shorter, and the description of the malfunction, which should explain the malfunction in detail. Your return shall only have the JSON string without anything else.";
 
 	for (var i = 0; i < subjects.length; i++){
 		var subject = subjects[i];
+		var promptContent = promptContentTemplate.replace('FUNC_PLACEHOLDER', subject.name);
 		var gptJson = utils.gptJsonGenerator(prompts['messages0'], 1, promptContent, sampleGptJson);
-		
-		//for (var j = 0; j < Object.keys(malfunctionsJson).length; j++){
-		//	var malfuncitionJson = malfunctionsJson[j];
-		//	var malfunction = writer.newMalfunction(malfunctionJson);
-		//	var guideword = ''; //TODO: get it from json
-		//	writer.updateGuidewordTable(malfunction, guideword);
-		//}
+		gptConversation = new GptConversation(gptJson);
+		malfunctionsJson = gptConversation.getContent('json');
+		var [guidewords, malfunctions] = writer.newMalfunctions(malfunctionsJson, subject);
+		for (var j = 0; j < malfunctions.length; j++){
+			var malfunction = malfunctions[j];
+			var guideword = guidewords[j];
+			writer.updateGuidewordTable(malfunction, guideword);
+		}
 	}
-	console.log('done');
 }
 
-//main();
-
+main();
 //{
 //  \"NOT\": {
 //    \"name\": \"No Stop\",

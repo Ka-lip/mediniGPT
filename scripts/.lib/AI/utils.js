@@ -76,7 +76,7 @@ function GptConversation(inJsonObj){
     this.getContent     = function(dataType){
 		if (dataType == undefined || dataType == 'text'){return this.content;}
 		if (dataType == 'json'){
-			return this.content;
+			return utils.text2json(this.content);
 		}
 	};
     this.getCreatedDate = function(){return this.createdDate;};
