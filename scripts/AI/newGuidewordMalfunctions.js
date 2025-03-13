@@ -5,9 +5,13 @@ load("../.lib/AI/configs.js");
 load("../.lib/ui.js");
 load("../.lib/factory.js");
 
+var promptContentTemplate = "Use guideword analysis approach to derive the malfunctions of the function 'FUNC_PLACEHOLDER'. Your return shall be a JSON string for guidewords, `NO OR NOT`, `MORE`, `LESS`, `AS WELL AS`, `PART OF`, `REVERSE`, `OTHER THAN`, `EARLY`, `LATE`, `BEFORE`, `AFTER`, `PEROIDIC`. If there is no reasonable malfunction for a specific guideword, just keep the value empty. For each guideword, the values include the name of the malfunction, which shall be shorter, and the description of the malfunction, which should explain the malfunction in detail. Your return shall only have the JSON string without anything else.";
+// TODO: replace the guidewords in promptContentTemplate automatically
+// TODO: allow multiple malfunctions for a single guideword
+
 var reader = {
 	getGuidewords: function(hazopTable){
-		if (hazopTable == undefined){var hazopTable = selection[0];}
+		if (hazopTable == undefined){hazopTable = selection[0];}
 		var hazopTableArr = hazopTable.guidewords.toArray();
 		var guidewordArr = Array(hazopTableArr.length);
 		for (var i = 0; i < hazopTableArr.length; i++){
@@ -16,7 +20,7 @@ var reader = {
 		return guidewordArr;
 	},
 	getSubjects: function(hazopTable){
-		if (hazopTable == undefined){var hazopTable = selection[0];}
+		if (hazopTable == undefined){hazopTable = selection[0];}
 		var subjectEntries = hazopTable.entries.toArray();
 		var subjectArr = Array(subjectEntries.length);
 		for (var i = 0; i < subjectEntries.length; i++){
@@ -28,9 +32,10 @@ var reader = {
 
 var writer = {
 	newMalfunction: function(json, scope){
-		if (scope == undefined){ var scope = selection[0]; }
+		if (scope == undefined){ scope = selection[0]; }
+		var malfunction;
 		if (json.name){
-			var malfunction = Factory.createElement(scope, Metamodel.safetyModel.Malfunction);
+			malfunction = Factory.createElement(scope, Metamodel.safetyModel.Malfunction);
 			malfunction.name = json.name;
 			malfunction.description = json.description;
 
@@ -38,7 +43,7 @@ var writer = {
 		}
 	},
 	updateGuidewordTable: function(malfunction, guideword, hazopTable){
-		if (hazopTable == undefined){ var hazopTable = selection[0]; }
+		if (hazopTable == undefined){ hazopTable = selection[0]; }
 		var tableEntries = hazopTable.entries.toArray();
 		var tableGuidewords = hazopTable.guidewords.toArray();
 		if (malfunction == undefined || guideword == undefined){ return 1; }
@@ -49,7 +54,7 @@ var writer = {
 		return 0;
 	},
 	newMalfunctions: function(json, scope){
-		if (scope == undefined){ var scope = selection[0]; }
+		if (scope == undefined){ scope = selection[0]; }
 		var guidewords = Object.keys(json);
 		var malfunctions = Array(guidewords.length);
 		var k, v;
@@ -64,21 +69,24 @@ var writer = {
 
 function main(){
     var guidewords = reader.getGuidewords();
+	var guideword;
 	var subjects = reader.getSubjects();
-	// TODO: replace the guidewords in promptContentTemplate automatically
-	// TODO: allow multiple malfunctions for a single guideword
-	var promptContentTemplate = "Use guideword analysis approach to derive the malfunctions of the function 'FUNC_PLACEHOLDER'. Your return shall be a JSON string for guidewords, `NO OR NOT`, `MORE`, `LESS`, `AS WELL AS`, `PART OF`, `REVERSE`, `OTHER THAN`, `EARLY`, `LATE`, `BEFORE`, `AFTER`, `PEROIDIC`. If there is no reasonable malfunction for a specific guideword, just keep the value empty. For each guideword, the values include the name of the malfunction, which shall be shorter, and the description of the malfunction, which should explain the malfunction in detail. Your return shall only have the JSON string without anything else.";
+	var subject;
+	var promptContent; 
+	var gptJson;
+	var malfunction, malfunctions; 
+	var malfunctionsJson;
 
 	for (var i = 0; i < subjects.length; i++){
-		var subject = subjects[i];
-		var promptContent = promptContentTemplate.replace('FUNC_PLACEHOLDER', subject.name);
-		var gptJson = utils.gptJsonGenerator(prompts['messages0'], 1, promptContent, sampleGptJson);
+		subject = subjects[i];
+		promptContent = promptContentTemplate.replace('FUNC_PLACEHOLDER', subject.name);
+		gptJson = utils.gptJsonGenerator(prompts['messages0'], 1, promptContent, sampleGptJson);
 		gptConversation = new GptConversation(gptJson);
 		malfunctionsJson = gptConversation.getContent('json');
-		var [guidewords, malfunctions] = writer.newMalfunctions(malfunctionsJson, subject);
+		[guidewords, malfunctions] = writer.newMalfunctions(malfunctionsJson, subject);
 		for (var j = 0; j < malfunctions.length; j++){
-			var malfunction = malfunctions[j];
-			var guideword = guidewords[j];
+			malfunction = malfunctions[j];
+			guideword = guidewords[j];
 			writer.updateGuidewordTable(malfunction, guideword);
 		}
 	}
