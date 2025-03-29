@@ -8,7 +8,7 @@ load("../.lib/factory.js");
 var promptContentTemplate = "Use guideword analysis approach to derive the malfunctions of the function 'FUNC_PLACEHOLDER'. Your return shall be a JSON string for guidewords, `NO OR NOT`, `MORE`, `LESS`, `AS WELL AS`, `PART OF`, `REVERSE`, `OTHER THAN`, `EARLY`, `LATE`, `BEFORE`, `AFTER`, `PEROIDIC`. If there is no reasonable malfunction for a specific guideword, just keep the value empty. For each guideword, the values include the name of the malfunction, which shall be shorter, and the description of the malfunction, which should explain the malfunction in detail. Your return shall only have the JSON string without anything else.";
 // TODO: replace the guidewords in promptContentTemplate automatically
 // TODO: allow multiple malfunctions for a single guideword
-
+// TODO: update the HAZOP table without adding similar malfunctions
 var reader = {
 	getGuidewords: function(hazopTable){
 		if (hazopTable == undefined){hazopTable = selection[0];}
@@ -19,14 +19,14 @@ var reader = {
 		}
 		return guidewordArr;
 	},
-	getSubjects: function(hazopTable){
+	getFuncs: function(hazopTable){
 		if (hazopTable == undefined){hazopTable = selection[0];}
-		var subjectEntries = hazopTable.entries.toArray();
-		var subjectArr = Array(subjectEntries.length);
-		for (var i = 0; i < subjectEntries.length; i++){
-			subjectArr[i] = subjectEntries[i].element;
+		var funcEntries = hazopTable.entries.toArray();
+		var funcArr = Array(funcEntries.length);
+		for (var i = 0; i < funcEntries.length; i++){
+			funcArr[i] = funcEntries[i].element;
 		}
-		return subjectArr;
+		return funcArr;
 	}
 };
 
@@ -70,20 +70,20 @@ var writer = {
 function main(){
     var guidewords = reader.getGuidewords();
 	var guideword;
-	var subjects = reader.getSubjects();
-	var subject;
+	var funcs = reader.getFuncs();
+	var func;
 	var promptContent; 
 	var gptJson;
 	var malfunction, malfunctions; 
 	var malfunctionsJson;
 
-	for (var i = 0; i < subjects.length; i++){
-		subject = subjects[i];
-		promptContent = promptContentTemplate.replace('FUNC_PLACEHOLDER', subject.name);
+	for (var i = 0; i < funcs.length; i++){
+		func = funcs[i];
+		promptContent = promptContentTemplate.replace('FUNC_PLACEHOLDER', func.name);
 		gptJson = utils.gptJsonGenerator(prompts['messages0'], 1, promptContent, sampleGptJson);
 		gptConversation = new GptConversation(gptJson);
 		malfunctionsJson = gptConversation.getContent('json');
-		[guidewords, malfunctions] = writer.newMalfunctions(malfunctionsJson, subject);
+		[guidewords, malfunctions] = writer.newMalfunctions(malfunctionsJson, func);
 		for (var j = 0; j < malfunctions.length; j++){
 			malfunction = malfunctions[j];
 			guideword = guidewords[j];
@@ -142,4 +142,77 @@ main();
 //    \"name\": \"\",
 //    \"description\": \"\"
 //  }
+//}
+
+
+//"Use guideword analysis approach to derive the malfunctions of the function 'Car brakes'. Your return shall be a JSON string for guidewords, `NO OR NOT`, `MORE`, `LESS`, `AS WELL AS`, `PART OF`, `REVERSE`, `OTHER THAN`, `EARLY`, `LATE`, `BEFORE`, `AFTER`, `PEROIDIC`. The value of each guideword is an array. If there is no reasonable malfunction for a specific guideword, just keep the array empty; if there are malfunctions more than one for one guideword, the array are allowed to has multiple sub-json for malfunctions. For each guideword, the values include the name of the malfunction, which shall be shorter, and the description of the malfunction, which should explain the malfunction in detail. Your return shall only have the JSON string without anything else."
+//{
+//  \"NO OR NOT\": [
+//    {
+//      \"name\": \"Brakes Not Engaging\",
+//      \"description\": \"The brake system does not activate when the brake pedal is pressed, leading to a failure to stop the vehicle.\"
+//    },
+//    {
+//      \"name\": \"Brake Warning Light Not Functioning\",
+//      \"description\": \"The indicator light on the dashboard does not illuminate when there is a brake system issue, preventing the driver from being aware of potential problems.\"
+//    }
+//  ],
+//  \"MORE\": [
+//    {
+//      \"name\": \"Excessive Brake Fade\",
+//      \"description\": \"The brakes lose effectiveness after prolonged use, requiring more pressure to achieve the same stopping power.\"
+//    },
+//    {
+//      \"name\": \"Increased Stopping Distance\",
+//      \"description\": \"The vehicle requires a longer distance to come to a complete stop due to reduced braking force.\"
+//    }
+//  ],
+//  \"LESS\": [
+//    {
+//      \"name\": \"Low Brake Fluid Level\",
+//      \"description\": \"Insufficient brake fluid in the reservoir leads to less hydraulic force, resulting in decreased braking performance.\"
+//    },
+//    {
+//      \"name\": \"Worn Brake Pads\",
+//      \"description\": \"Deterioration of brake pads reduces the thickness available to create friction, thus lessening braking effectiveness.\"
+//    }
+//  ],
+//  \"AS WELL AS\": [],
+//  \"PART OF\": [
+//    {
+//      \"name\": \"Master Cylinder Failure\",
+//      \"description\": \"The master cylinder, which generates hydraulic pressure for the braking system, fails, affecting the entire braking process.\"
+//    },
+//    {
+//      \"name\": \"Caliper Failure\",
+//      \"description\": \"Brake calipers that do not function properly can prevent the brake pads from clamping down on the rotors effectively.\"
+//    }
+//  ],
+//  \"REVERSE\": [
+//    {
+//      \"name\": \"Brakes Apply When Not Pressed\",
+//      \"description\": \"The braking system engages without pressing the brake pedal due to faulty sensors or wiring issues.\"
+//    }
+//  ],
+//  \"OTHER THAN\": [],
+//  \"EARLY\": [],
+//  \"LATE\": [
+//    {
+//      \"name\": \"Delayed Response\",
+//      \"description\": \"A noticeable lag occurs between pressing the brake pedal and the brakes engaging, posing a significant safety risk.\"
+//    }
+//  ],
+//  \"BEFORE\": [],
+//  \"AFTER\": [
+//    {
+//      \"name\": \"Brake Lock-Up\",
+//      \"description\": \"Wheels lock prematurely after applying brakes, often due to sudden engagement or malfunctioning ABS, leading to loss of control.\"
+//    }
+//  ],
+//  \"PERIODIC\": [
+//    {
+//      \"name\": \"Brake System Maintenance Neglect\",
+//      \"description\": \"Failure to regularly inspect and maintain brake components, leading to gradual degradation and unexpected breakdowns.\"
+//    }
+//  ]
 //}

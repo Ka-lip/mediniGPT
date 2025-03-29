@@ -16,6 +16,9 @@ var utils = {
     },
     
     prettifyGPTanswer: function (jsonStr){
+        if (!JSON.parse(jsonStr).choices || !JSON.parse(jsonStr).choices[0] || !JSON.parse(jsonStr).choices[0].message || !JSON.parse(jsonStr).choices[0].message.content){
+            throw "Wrong json string. Check the return json string from the LLM sever.\n The json string are required to have choices[0].message.content.\nThe current string is: \n" + JSON.parse(jsonStr);
+        }
         return JSON.parse(jsonStr).choices[0].message.content;
     },
     
