@@ -1,4 +1,4 @@
-//$EXPERIMENTAL$ $ENHANCED_JAVA_ACCESS$ $DEBUG$
+//$EXPERIMENTAL$ $ENHANCED_JAVA_ACCESS$
 load("../.lib/AI/utils.js");
 load("../.lib/helper.js");
 load("../.lib/AI/configs.js");
@@ -8,7 +8,6 @@ load("../.lib/factory.js");
 var promptContentTemplate =
   "Use guideword analysis approach to derive the malfunctions of the function 'FUNC_PLACEHOLDER'. Your return shall be a JSON string for guidewords, `NO OR NOT`, `MORE`, `LESS`, `AS WELL AS`, `PART OF`, `REVERSE`, `OTHER THAN`, `EARLY`, `LATE`, `BEFORE`, `AFTER`, `PERIODIC`. The value of each guideword is an array. If there is no reasonable malfunction for a specific guideword, just keep the array empty; if there are malfunctions more than one for one guideword, the array is allowed to has multiple sub-jsons for malfunctions. For each guideword, the values include the name of the malfunction, which shall be shorter, and the description of the malfunction, which should explain the malfunction in detail. Your return shall only have the JSON string without anything else.";
 // TODO: replace the guidewords in promptContentTemplate automatically
-// TODO: allow multiple malfunctions for a single guideword
 // TODO: update the HAZOP table without adding similar malfunctions
 
 var reader = {
