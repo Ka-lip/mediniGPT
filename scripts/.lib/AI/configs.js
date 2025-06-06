@@ -1,8 +1,11 @@
 var configs = {
+  lang: "Japanese",
   apiAccessMethod: "e", // 'c' for reading from this file (config.js )or 'e'for reading from global environment.
   apiKey: "GPT_API", // the name of the environment variable or the key.
   endpoint: "GPT_endpoint", // the name of the environment variable or the URL.
   max_tokens: 1000, // if you get answers not complete, try increasing this value.
+  pyAppPath:
+    "C:\\Users\\kchu\\OfflineDocuments\\gitRepositories\\mediniGPT\\python\\venv\\Scripts\\python.exe",
 };
 
 var prompts = {
