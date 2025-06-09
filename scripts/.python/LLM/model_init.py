@@ -13,7 +13,7 @@ if missing_vars:
         f"Missing required environment variables: {', '.join(missing_vars)}"
     )
 
-model = AzureChatOpenAI(
+llm_model = AzureChatOpenAI(
     azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
     azure_deployment=os.environ["AZURE_OPENAI_DEPLOYMENT_NAME"],
     openai_api_version=os.environ["AZURE_OPENAI_API_VERSION"],

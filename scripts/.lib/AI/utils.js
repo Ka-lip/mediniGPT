@@ -75,8 +75,11 @@ var utils = {
   },
 
   text2json: function (text) {
-    var t = text.replace(/```json/g, "");
-    t = t.replace(/```/g, "");
+
+    var t = text
+      .replace(/```json/g, "")
+      .replace(/```/g, "")
+      .replace(/\\n/g, "\n");
     j = JSON.parse(t);
     return j;
   },
