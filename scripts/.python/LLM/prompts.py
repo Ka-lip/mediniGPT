@@ -13,17 +13,17 @@ prompts["item_definition"] = (
 
 prompts["fta"] = (
     """Do Fault Tree Analysis (FTA).
-    Analyze what combination of multiple events cause the top event happens.
+    Analyze what combination of multiple events triggers the top event.
     The top event node is: {event}.
     Your return must follow the following requirements:
-    1. The retur will be used for another program, 
+    1. The return will be used by another program,
        so the format is a JSON string only,
        WITHOUT any other strings, including explanation or summary.
        Starting with ```json and ending with ```
        E.g. {{gate: AND or OR, events: [event1, event2 ...etc]}}
     2. The JSON is one-level with keys `gate` and `events`.
        The gate shall be AND or OR indicating the events' relationship.
-       Each event of events shall be a string explaining the event.
+       Each event shall be a string explaining the event.
     3. The second deeper level events are not allowed.
     4. The lanugage describing events is {language}.
     5. {reasoning}"""
